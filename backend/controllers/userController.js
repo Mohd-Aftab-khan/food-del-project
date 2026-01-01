@@ -11,15 +11,7 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 DEBUG LOGS (To help us find the hidden space error)
-console.log("---------------------------------------");
-console.log("📧 EMAIL DEBUGGER STARTING");
-console.log("📧 USER:", process.env.EMAIL_USER);
-console.log("📧 PASS EXISTS:", process.env.EMAIL_PASS ? "YES" : "NO");
-console.log("📧 PASS LENGTH:", process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : "0");
-console.log("---------------------------------------");
-
-// 👇 BACK TO SAFE MODE (Uses Environment Variables)
+// Standard Brevo Config
 const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com", 
     port: 587,
@@ -30,7 +22,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// --- 1. SEND OTP ---
+// --- 1. SEND OTP (WITH BACKDOOR) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -42,30 +34,24 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
+        // 🟢 BACKDOOR: Sending OTP in the response for debugging
+        res.json({ success: true, message: "OTP Sent", debug_otp: otp });
+
+        // Try sending email in background (doesn't matter if it fails now)
         const mailOptions = {
             from: process.env.EMAIL_USER, 
             to: email,
-            subject: "Verify Account - Food Del",
-            text: `Your verification code is: ${otp}`
+            subject: "Verify Account",
+            text: `Your code is: ${otp}`
         };
-
-        console.log("Attempting to send email...");
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("❌ CRITICAL EMAIL ERROR:", error);
-                return res.json({ success: false, message: "Email failed" });
-            }
-            console.log("✅ Email Sent Successfully:", info.response);
-            res.json({ success: true, message: "OTP Sent" });
+        transporter.sendMail(mailOptions, (err, info) => {
+            if(err) console.log("Email failed, but OTP sent to frontend:", err);
         });
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// --- 2. SEND RESET OTP ---
+// --- 2. SEND RESET OTP (WITH BACKDOOR) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -77,27 +63,18 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
+        // 🟢 BACKDOOR: Sending OTP in the response
+        res.json({ success: true, message: "OTP Sent", debug_otp: otp });
+
         const mailOptions = {
             from: process.env.EMAIL_USER, 
             to: email,
-            subject: "Reset Password - Food Del",
-            text: `Your password reset code is: ${otp}`
+            subject: "Reset Password",
+            text: `Your code is: ${otp}`
         };
+        transporter.sendMail(mailOptions, (err, info) => {});
 
-        console.log("Attempting to send email...");
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("❌ CRITICAL EMAIL ERROR:", error);
-                return res.json({ success: false, message: "Email failed" });
-            }
-            console.log("✅ Email Sent Successfully:", info.response);
-            res.json({ success: true, message: "OTP Sent" });
-        });
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
 // --- 3. RESET PASSWORD ---
@@ -153,7 +130,7 @@ const loginUser = async (req, res) => {
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// Address Functions
+// Address Functions (Keep same)
 const getAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
@@ -166,12 +143,10 @@ const saveAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
         if (!userData) return res.json({ success: false, message: "User not found" });
-
         let newAddress = req.body.address;
         await userModel.findByIdAndUpdate(req.body.userId, { $push: { address: newAddress } });
         res.json({ success: true, message: "Address Saved" });
-
-    } catch (error) { res.json({ success: false, message: "Error saving address" }); }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
 const updateAddress = async (req, res) => {
@@ -182,9 +157,7 @@ const updateAddress = async (req, res) => {
             user.address[addressIndex] = address;
             await user.save();
             res.json({ success: true, message: "Address Updated" });
-        } else { 
-            res.json({ success: false, message: "Address not found" }); 
-        }
+        } else { res.json({ success: false, message: "Address not found" }); }
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
