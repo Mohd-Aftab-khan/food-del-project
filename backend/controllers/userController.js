@@ -10,16 +10,17 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 REPLACE THE OLD TRANSPORTER WITH THIS 👇
+// 👇 REPLACE WITH THIS CODE 👇
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // This is crucial for Render
+    port: 587,            // <--- CHANGE THIS TO 587
+    secure: false,        // <--- MUST BE FALSE (Uses STARTTLS)
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
 });
+
 // --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
