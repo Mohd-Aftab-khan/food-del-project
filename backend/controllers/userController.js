@@ -2,7 +2,7 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import nodemailer from "nodemailer"; 
+import axios from "axios"; // 👈 We use Axios now, not Nodemailer
 
 // Token Generator
 const createToken = (id) => {
@@ -11,18 +11,34 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// Standard Brevo Config
-const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com", 
-    port: 587,
-    secure: false, 
-    auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS  
+// 👇 HELPER FUNCTION: Send Email via Brevo API (HTTP)
+// This bypasses all SMTP port blocks!
+const sendBrevoEmail = async (email, subject, content) => {
+    try {
+        const response = await axios.post(
+            'https://api.brevo.com/v3/smtp/email',
+            {
+                sender: { email: process.env.EMAIL_USER, name: "Food Del Support" },
+                to: [{ email: email }],
+                subject: subject,
+                htmlContent: `<html><body><p>${content}</p></body></html>`
+            },
+            {
+                headers: {
+                    'api-key': process.env.EMAIL_PASS, // Uses API Key
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        console.log("✅ Email Sent via API:", response.data);
+        return true;
+    } catch (error) {
+        console.log("❌ Email API Failed:", error.response ? error.response.data : error.message);
+        return false;
     }
-});
+};
 
-// --- 1. SEND OTP (WITH BACKDOOR) ---
+// --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -34,24 +50,26 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 🟢 BACKDOOR: Sending OTP in the response for debugging
-        res.json({ success: true, message: "OTP Sent", debug_otp: otp });
+        // Send via API
+        const emailSent = await sendBrevoEmail(
+            email, 
+            "Verify Account - Food Del", 
+            `Your verification code is: <b>${otp}</b>`
+        );
 
-        // Try sending email in background (doesn't matter if it fails now)
-        const mailOptions = {
-            from: process.env.EMAIL_USER, 
-            to: email,
-            subject: "Verify Account",
-            text: `Your code is: ${otp}`
-        };
-        transporter.sendMail(mailOptions, (err, info) => {
-            if(err) console.log("Email failed, but OTP sent to frontend:", err);
-        });
+        if (emailSent) {
+            res.json({ success: true, message: "OTP Sent to Email" });
+        } else {
+            res.json({ success: false, message: "Failed to send email" });
+        }
 
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
-// --- 2. SEND RESET OTP (WITH BACKDOOR) ---
+// --- 2. SEND RESET OTP ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -63,17 +81,17 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 🟢 BACKDOOR: Sending OTP in the response
-        res.json({ success: true, message: "OTP Sent", debug_otp: otp });
+        const emailSent = await sendBrevoEmail(
+            email, 
+            "Reset Password - Food Del", 
+            `Your password reset code is: <b>${otp}</b>`
+        );
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER, 
-            to: email,
-            subject: "Reset Password",
-            text: `Your code is: ${otp}`
-        };
-        transporter.sendMail(mailOptions, (err, info) => {});
-
+        if (emailSent) {
+            res.json({ success: true, message: "OTP Sent to Email" });
+        } else {
+            res.json({ success: false, message: "Failed to send email" });
+        }
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
