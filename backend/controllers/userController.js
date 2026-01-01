@@ -11,14 +11,13 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 BREVO SMTP CONFIGURATION (Free & Unblocked)
 const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com", // Brevo Server
-    port: 587,                    // Standard Port
-    secure: false,                // False for 587
+    host: "smtp-relay.brevo.com", 
+    port: 2525,                   // <--- CHANGE THIS (587 is blocked, 2525 is open)
+    secure: false,                
     auth: {
-        user: process.env.EMAIL_USER, // Your Brevo Email
-        pass: process.env.EMAIL_PASS  // Your Brevo API Key
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS  
     }
 });
 
