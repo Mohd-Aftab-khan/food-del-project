@@ -4,18 +4,19 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import nodemailer from "nodemailer"; 
 
+// Token Generator
 const createToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET);
 }
 
+// Global Variable to store OTPs temporarily
 let otpStore = {}; 
 
-// 👇 REPLACE WITH THIS CODE 👇
-// 👇 REPLACE WITH THIS CODE 👇
+// Email Configuration (We keep this for later, even if bypassing now)
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,            // <--- CHANGE THIS TO 587
-    secure: false,        // <--- MUST BE FALSE (Uses STARTTLS)
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -35,10 +36,10 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 👇 THIS IS THE BYPASS: Print OTP to Render Logs
-        console.log("🔓 REGISTER OTP FOR", email, ":", otp); 
+        // 🔓 LOG OTP TO CONSOLE (Copy from Render Logs)
+        console.log("🔓 DEVELOPER BYPASS - REGISTER OTP:", otp); 
 
-        // 👇 INSTANT SUCCESS (Skip sending actual email to prevent timeout)
+        // Send Fake Success to Frontend
         res.json({ success: true, message: "OTP Generated (Check Logs)" });
 
     } catch (error) { 
@@ -47,7 +48,7 @@ const sendEmailOtp = async (req, res) => {
     }
 }
 
-/// --- 2. SEND RESET OTP (BYPASS MODE) ---
+// --- 2. SEND RESET OTP (BYPASS MODE) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -60,10 +61,10 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 👇 THIS IS THE BYPASS: Print OTP to Render Logs
-        console.log("🔓 RESET OTP FOR", email, ":", otp); 
+        // 🔓 LOG OTP TO CONSOLE (Copy from Render Logs)
+        console.log("🔓 DEVELOPER BYPASS - RESET OTP:", otp); 
 
-        // 👇 INSTANT SUCCESS (Skip sending actual email to prevent timeout)
+        // Send Fake Success to Frontend
         res.json({ success: true, message: "OTP Generated (Check Logs)" });
 
     } catch (error) { 
@@ -95,6 +96,7 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
     const { name, password, email, otp } = req.body;
     try {
+        // Verify OTP from the Store
         if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
@@ -125,6 +127,7 @@ const loginUser = async (req, res) => {
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
+// Address Functions
 const getAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
@@ -143,18 +146,6 @@ const saveAddress = async (req, res) => {
             return res.json({ success: false, message: "Mobile number must be exactly 10 digits" });
         }
 
-        const isDuplicate = userData.address.some(addr => 
-            addr.firstName === newAddress.firstName &&
-            addr.street === newAddress.street &&
-            addr.city === newAddress.city &&
-            addr.zipcode === newAddress.zipcode && 
-            addr.phone === newAddress.phone
-        );
-
-        if (isDuplicate) {
-            return res.json({ success: false, message: "Your address is already saved!" });
-        }
-
         await userModel.findByIdAndUpdate(req.body.userId, { $push: { address: newAddress } });
         res.json({ success: true, message: "Address Saved" });
 
@@ -165,9 +156,7 @@ const updateAddress = async (req, res) => {
     try {
         const { userId, addressIndex, address } = req.body;
         const user = await userModel.findById(userId);
-        if (!user) return res.json({ success: false, message: "User not found" });
-
-        if (user.address && user.address[addressIndex]) {
+        if (user && user.address && user.address[addressIndex]) {
             user.address[addressIndex] = address;
             await user.save();
             res.json({ success: true, message: "Address Updated" });
@@ -185,7 +174,6 @@ const removeAddress = async (req, res) => {
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// 🧹 REMOVED: loginWithPhone
 export { 
     loginUser, 
     registerUser, 
