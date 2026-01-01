@@ -10,18 +10,16 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// REPLACE THIS SECTION
-// REPLACE your old transporter with this:
+// 👇 REPLACE THE OLD TRANSPORTER WITH THIS 👇
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // Use SSL (prevents hanging)
+    secure: true, // This is crucial for Render
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
 });
-
 // --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
@@ -46,14 +44,19 @@ const sendEmailOtp = async (req, res) => {
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// --- 2. SEND RESET OTP ---
+// Find your sendResetOtp function and update the inside part:
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
+        console.log("1. Checking user for email:", email); // Log 1
+
         const user = await userModel.findOne({ email });
         if (!user) {
+            console.log("2. User not found"); // Log 2
             return res.json({ success: false, message: "User not found" });
         }
+
+        console.log("3. User found. Preparing email..."); // Log 3
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
@@ -63,17 +66,22 @@ const sendResetOtp = async (req, res) => {
             subject: "Reset Password Code",
             text: `Your password reset code is: ${otp}`
         };
-        console.log("Attempting to send email to:", email); // <--- ADD THIS LINE
 
-transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-        console.log("Email Error:", error); // <--- ADD THIS LINE
-        return res.json({ success: false, message: "Email failed" });
-    } 
-    console.log("Email Sent Successfully!"); // <--- ADD THIS LINE
-    res.json({ success: true, message: "OTP Sent" });
-});
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+        console.log("4. Sending email now via Port 465..."); // Log 4
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log("❌ EMAIL FAILED:", error); // Log Error
+                return res.json({ success: false, message: "Email failed" });
+            }
+            console.log("✅ EMAIL SENT SUCCESS!", info.response); // Log Success
+            res.json({ success: true, message: "OTP Sent" });
+        });
+
+    } catch (error) { 
+        console.log("❌ CRITICAL ERROR:", error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
 // --- 3. RESET PASSWORD ---
