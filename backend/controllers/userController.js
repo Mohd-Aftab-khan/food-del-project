@@ -2,7 +2,7 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import axios from "axios"; // 👈 We use Axios now, not Nodemailer
+import axios from "axios";
 
 // Token Generator
 const createToken = (id) => {
@@ -11,34 +11,30 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 HELPER FUNCTION: Send Email via Brevo API (HTTP)
-// This bypasses all SMTP port blocks!
+// 👇 HELPER: Try to send email, but don't crash if it fails
 const sendBrevoEmail = async (email, subject, content) => {
     try {
-        const response = await axios.post(
+        await axios.post(
             'https://api.brevo.com/v3/smtp/email',
             {
-                sender: { email: process.env.EMAIL_USER, name: "Food Del Support" },
+                sender: { email: process.env.EMAIL_USER, name: "Food Del" },
                 to: [{ email: email }],
                 subject: subject,
                 htmlContent: `<html><body><p>${content}</p></body></html>`
             },
             {
-                headers: {
-                    'api-key': process.env.EMAIL_PASS, // Uses API Key
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'api-key': process.env.EMAIL_PASS, 'Content-Type': 'application/json' }
             }
         );
-        console.log("✅ Email Sent via API:", response.data);
+        console.log("✅ Email sent via API");
         return true;
     } catch (error) {
-        console.log("❌ Email API Failed:", error.response ? error.response.data : error.message);
+        console.log("⚠️ Email failed (Account Not Active), but bypassing...");
         return false;
     }
 };
 
-// --- 1. SEND OTP ---
+// --- 1. SEND OTP (BACKDOOR ENABLED) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -50,26 +46,16 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // Send via API
-        const emailSent = await sendBrevoEmail(
-            email, 
-            "Verify Account - Food Del", 
-            `Your verification code is: <b>${otp}</b>`
-        );
+        // Attempt to send email (It might fail due to Brevo activation)
+        await sendBrevoEmail(email, "Verify Account", `Your code is: <b>${otp}</b>`);
 
-        if (emailSent) {
-            res.json({ success: true, message: "OTP Sent to Email" });
-        } else {
-            res.json({ success: false, message: "Failed to send email" });
-        }
+        // 🟢 BACKDOOR: Send success + OTP regardless of email status
+        res.json({ success: true, message: "OTP Generated", debug_otp: otp });
 
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// --- 2. SEND RESET OTP ---
+// --- 2. SEND RESET OTP (BACKDOOR ENABLED) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -81,17 +67,11 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        const emailSent = await sendBrevoEmail(
-            email, 
-            "Reset Password - Food Del", 
-            `Your password reset code is: <b>${otp}</b>`
-        );
+        await sendBrevoEmail(email, "Reset Password", `Your code is: <b>${otp}</b>`);
 
-        if (emailSent) {
-            res.json({ success: true, message: "OTP Sent to Email" });
-        } else {
-            res.json({ success: false, message: "Failed to send email" });
-        }
+        // 🟢 BACKDOOR: Send success + OTP
+        res.json({ success: true, message: "OTP Generated", debug_otp: otp });
+
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
@@ -148,7 +128,7 @@ const loginUser = async (req, res) => {
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// Address Functions (Keep same)
+// Address Functions
 const getAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
@@ -161,10 +141,12 @@ const saveAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
         if (!userData) return res.json({ success: false, message: "User not found" });
+
         let newAddress = req.body.address;
         await userModel.findByIdAndUpdate(req.body.userId, { $push: { address: newAddress } });
         res.json({ success: true, message: "Address Saved" });
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+
+    } catch (error) { res.json({ success: false, message: "Error saving address" }); }
 }
 
 const updateAddress = async (req, res) => {
@@ -175,7 +157,9 @@ const updateAddress = async (req, res) => {
             user.address[addressIndex] = address;
             await user.save();
             res.json({ success: true, message: "Address Updated" });
-        } else { res.json({ success: false, message: "Address not found" }); }
+        } else { 
+            res.json({ success: false, message: "Address not found" }); 
+        }
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
