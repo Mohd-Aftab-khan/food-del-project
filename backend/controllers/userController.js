@@ -11,6 +11,7 @@ const createToken = (id) => {
 let otpStore = {}; 
 
 // 👇 REPLACE WITH THIS CODE 👇
+// 👇 REPLACE WITH THIS CODE 👇
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,            // <--- CHANGE THIS TO 587
