@@ -11,17 +11,26 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
+// 👇 DEBUG LOGS (To help us find the hidden space error)
+console.log("---------------------------------------");
+console.log("📧 EMAIL DEBUGGER STARTING");
+console.log("📧 USER:", process.env.EMAIL_USER);
+console.log("📧 PASS EXISTS:", process.env.EMAIL_PASS ? "YES" : "NO");
+console.log("📧 PASS LENGTH:", process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : "0");
+console.log("---------------------------------------");
+
+// 👇 BACK TO SAFE MODE (Uses Environment Variables)
 const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com", 
-    port: 2525,                   // <--- CHANGE THIS (587 is blocked, 2525 is open)
-    secure: false,                
+    port: 587,
+    secure: false, 
     auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS  
     }
 });
 
-// --- 1. SEND OTP (VIA BREVO) ---
+// --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -34,26 +43,29 @@ const sendEmailOtp = async (req, res) => {
         otpStore[email] = otp; 
 
         const mailOptions = {
-            from: process.env.EMAIL_USER, // ⚠️ Must match your Brevo login email
+            from: process.env.EMAIL_USER, 
             to: email,
             subject: "Verify Account - Food Del",
             text: `Your verification code is: ${otp}`
         };
 
-        console.log("Sending email via Brevo...");
+        console.log("Attempting to send email...");
 
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                console.log("❌ Email Error:", error);
+                console.log("❌ CRITICAL EMAIL ERROR:", error);
                 return res.json({ success: false, message: "Email failed" });
             }
-            console.log("✅ Email Sent:", info.response);
+            console.log("✅ Email Sent Successfully:", info.response);
             res.json({ success: true, message: "OTP Sent" });
         });
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
-// --- 2. SEND RESET OTP (VIA BREVO) ---
+// --- 2. SEND RESET OTP ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -66,23 +78,26 @@ const sendResetOtp = async (req, res) => {
         otpStore[email] = otp; 
 
         const mailOptions = {
-            from: process.env.EMAIL_USER, // ⚠️ Must match your Brevo login email
+            from: process.env.EMAIL_USER, 
             to: email,
             subject: "Reset Password - Food Del",
             text: `Your password reset code is: ${otp}`
         };
 
-        console.log("Sending email via Brevo...");
+        console.log("Attempting to send email...");
 
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                console.log("❌ Email Error:", error);
+                console.log("❌ CRITICAL EMAIL ERROR:", error);
                 return res.json({ success: false, message: "Email failed" });
             }
-            console.log("✅ Email Sent:", info.response);
+            console.log("✅ Email Sent Successfully:", info.response);
             res.json({ success: true, message: "OTP Sent" });
         });
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
 // --- 3. RESET PASSWORD ---
