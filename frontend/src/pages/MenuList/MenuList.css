@@ -1,0 +1,163 @@
+.menu-list {
+  margin-top: 50px;
+}
+
+/* ⚡ NEW: Style for the Category Titles */
+.category-title {
+  color: tomato;
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  padding-left: 5px;
+  border-left: 4px solid tomato;
+}
+
+/* --- EVERYTHING BELOW IS YOUR ORIGINAL CSS --- */
+
+/* 1. Header Styles */
+.menu-list-header.single-mode,
+.menu-list-header.bulk-mode {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  color: #333; 
+  font-size: 18px; 
+  font-weight: 700; 
+  padding: 10px 0;
+}
+
+.menu-list-header.single-mode { grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr 1fr; }
+.menu-list-header.bulk-mode   { grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; }
+
+/* 2. Row Styles */
+.menu-list-row.single-mode,
+.menu-list-row.bulk-mode {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  color: black;
+  margin: 10px 0px;
+  border-bottom: 1px solid #e2e2e2;
+  padding-bottom: 10px;
+  animation: fadeIn 0.5s;
+  font-size: 16px; 
+}
+
+.menu-list-row.single-mode { grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr 1fr; }
+.menu-list-row.bulk-mode   { grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; }
+
+.menu-product-image {
+  width: 50px;
+  border-radius: 5px;
+}
+
+.menu-quantity-control .add-btn {
+    width: 35px;
+    cursor: pointer;
+}
+
+.menu-counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #f0f0f0;
+    padding: 5px;
+    border-radius: 50px;
+    width: fit-content;
+}
+
+.menu-counter img {
+    width: 25px;
+    cursor: pointer;
+}
+
+.buy-now-small {
+    background-color: transparent;
+    border: 1px solid tomato;
+    color: tomato;
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.buy-now-small:hover {
+    background-color: tomato;
+    color: white;
+}
+
+/* Footer Styles */
+.menu-list-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: 30px;
+    padding: 20px;
+    background-color: white;
+    border-top: 2px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px -5px 15px rgba(0,0,0,0.1);
+    z-index: 10;
+    animation: fadeInUp 0.5s;
+}
+
+@keyframes fadeInUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.menu-list-total h2 {
+    color: #333;
+    font-size: max(1.5vw, 20px);
+}
+
+.menu-list-footer button {
+    border: none;
+    color: white;
+    background-color: tomato;
+    padding: 15px 40px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+}
+
+.menu-list-footer button:hover {
+    background-color: #e04428;
+}
+
+/* --- MOBILE VIEW --- */
+@media (max-width: 750px) {
+  
+  .menu-list-header.single-mode, 
+  .menu-list-header.bulk-mode {
+      font-size: 13px; 
+      font-weight: 700; 
+  }
+
+  .menu-list-header.single-mode, .menu-list-row.single-mode {
+      grid-template-columns: 1fr 1.5fr 1fr 1.5fr 1fr 1fr;
+      font-size: 12px; 
+  }
+  
+  .menu-list-header.bulk-mode, .menu-list-row.bulk-mode {
+      grid-template-columns: 1fr 1.5fr 1fr 1.5fr 1fr;
+      font-size: 12px;
+  }
+  
+  .menu-product-image {
+      width: 40px;
+  }
+  
+  .menu-list-footer {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+  }
+}

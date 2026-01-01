@@ -1,0 +1,41 @@
+.app-download {
+    margin: auto auto;
+    margin-top: 100px;
+    font-size: max(3vw, 20px);
+    text-align: center;
+    font-weight: 500;
+    
+    /* Highlight Styling */
+    background-color: #ebdfdd; /* Light Tomato Theme Background */
+    padding: 50px;
+    border-radius: 20px; /* Rounded corners */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Specific styling for the text to ensure contrast */
+.app-download p {
+    color: #262626; 
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.app-downloads-platforms {
+    display: flex;
+    justify-content: center;
+    gap: max(2vw, 10px);
+    margin-top: 40px;
+}
+
+.app-downloads-platforms img {
+    width: max(30vw, 120px);
+    max-width: 180px;
+    transition: 0.5s;
+    cursor: pointer;
+}
+
+.app-downloads-platforms img:hover {
+    transform: scale(1.05); /* Slight zoom on hover */
+}

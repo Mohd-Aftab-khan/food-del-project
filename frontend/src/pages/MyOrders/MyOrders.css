@@ -1,0 +1,278 @@
+/* --- ORDER CARD STYLES --- */
+.my-orders-order {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 15px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.my-orders-order:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Header for Delivered Items */
+.order-status-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.status-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+}
+
+/* Green Checkmark for Delivered */
+.status-icon.delivered {
+    background-color: #26a541; /* Flipkart Green */
+}
+.order-status-text.delivered {
+    color: #26a541;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* Orange/Grey for Active */
+.status-icon.active {
+    background-color: #ff9f00; /* Flipkart Orange */
+}
+.order-status-text.active {
+    color: #333;
+    font-weight: 600;
+}
+
+/* "See all updates" Button */
+.see-updates-btn {
+    background: none;
+    border: none;
+    color: #2874f0; /* Flipkart Blue */
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    margin-top: 10px;
+    font-size: 14px;
+}
+.see-updates-btn:hover {
+    text-decoration: underline;
+}
+
+/* Item Images Row */
+.order-items-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.order-items-row img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
+/* --- RESPONSIVE MEDIA QUERIES --- */
+@media (max-width: 900px) {
+    .my-orders-order {
+        grid-template-columns: 1fr 2fr 1fr; 
+        row-gap: 5px;
+        font-size: 12px;
+    }
+    .my-orders-order button {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .my-orders-order {
+        grid-template-columns: 1fr 2fr; 
+        row-gap: 15px; 
+    }
+    .my-orders-order button {
+        padding: 5px 0px; 
+    }
+}
+
+/* --- Tracking Popup Overlay --- */
+.track-order-popup {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.tracking-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px; /* Slightly squarer like the app */
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    font-family: Arial, sans-serif;
+}
+
+.tracking-header {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.tracking-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+.tracking-header p {
+    margin: 5px 0 0;
+    color: #666;
+    font-size: 13px;
+}
+
+/* --- Vertical Transaction Line (Animated) --- */
+.timeline {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-left: 20px;
+    margin-top: 20px;
+}
+
+.timeline-step {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    padding-bottom: 35px;
+}
+
+/* 1. THE GREY BACKGROUND LINE (Static) */
+.timeline-step::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 20px;
+    width: 3px;
+    height: 100%;
+    background-color: #e0e0e0; /* Always grey underneath */
+    z-index: 1;
+}
+
+/* Remove line for the last step */
+.timeline-step:last-child::before {
+    display: none;
+}
+
+/* 2. THE GREEN FILLING LINE (Animated) */
+/* We use ::after to create the green overlay that grows */
+.timeline-step.completed::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 20px;
+    width: 3px;
+    height: 0%; /* Start empty */
+    background-color: #26a541; /* Green */
+    z-index: 2; /* Sit on top of grey line */
+    animation: fillLine 0.5s linear forwards; /* The Magic Animation */
+}
+
+/* 3. KEYFRAMES FOR ANIMATIONS */
+@keyframes fillLine {
+    from { height: 0; }
+    to { height: 100%; }
+}
+
+@keyframes popDot {
+    0% { transform: scale(1); background-color: #e0e0e0; box-shadow: none; }
+    50% { transform: scale(1.3); background-color: #26a541; }
+    100% { transform: scale(1); background-color: #26a541; box-shadow: 0 0 0 4px #ddf3e2; }
+}
+
+/* 4. THE DOTS (Animated) */
+.dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    z-index: 3;
+    flex-shrink: 0;
+    /* Initially grey, animation will turn it green */
+}
+
+/* Only animate dots that are Active or Completed */
+.timeline-step.active .dot,
+.timeline-step.completed .dot {
+    animation: popDot 0.4s ease-out forwards;
+}
+
+/* 5. STAGGERED DELAYS (The Chain Reaction) */
+
+/* Step 1: Order Confirmed (Immediate) */
+.timeline-step:nth-child(1) .dot {
+    animation-delay: 0s;
+}
+.timeline-step:nth-child(1).completed::after {
+    animation-delay: 0.2s; /* Line starts after dot pops */
+}
+
+/* Step 2: Food Processing */
+.timeline-step:nth-child(2) .dot {
+    animation-delay: 0.7s; /* Wait for Step 1 line to finish */
+}
+.timeline-step:nth-child(2).completed::after {
+    animation-delay: 0.9s;
+}
+
+/* Step 3: Out for Delivery */
+.timeline-step:nth-child(3) .dot {
+    animation-delay: 1.4s;
+}
+.timeline-step:nth-child(3).completed::after {
+    animation-delay: 1.6s;
+}
+
+/* Step 4: Delivered */
+.timeline-step:nth-child(4) .dot {
+    animation-delay: 2.1s;
+}
+/* Text Content */
+.step-content h4 {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.step-content p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #878787;
+}
+
+.close-track-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.close-track-btn:hover {
+    background-color: #f5f5f5;
+}

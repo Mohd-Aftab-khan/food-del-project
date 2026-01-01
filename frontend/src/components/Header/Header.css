@@ -1,0 +1,73 @@
+.header{
+    height: 34vw;
+    margin: 20px auto;
+    background: url('/header_img.png') no-repeat;
+    background-size: contain;
+    position: relative;
+}
+.header-contents{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 1.5vw;
+    max-width: 50%;
+    bottom: 10%;
+    left: 6vw;
+    animation: fadeIn 3s;
+}
+
+.header-contents h2{
+    font-weight: 500;
+    color: white;
+    font-size: max(4.5vw,22px);
+}
+
+.header-contents p{
+    color: white;
+    font-size: 1vw;
+}
+
+.header-contents button{
+    border: none;
+    color: #747474;
+    font-weight: 500;
+    padding: 1vw 2.3vw;
+    background-color: white;
+    font-size: max(1vw, 13px);
+    border-radius: 50px;
+}
+@media (max-width:1050px) {
+    .header-contents{
+        max-width: 45%;
+    }
+}
+@media (max-width:750px) {
+    .header-contents{
+        max-width: 65%;
+    }
+    .header-contents p{
+        display: none;
+    }
+    .header-contents button{
+        padding: 2vw 4vw;
+    }
+}
+
+/* Add this to the bottom of Header.css */
+
+/* 1. Hover Effect: Button grows slightly and changes color */
+.header-contents button:hover {
+    transform: scale(1.05); /* Zooms in by 5% */
+    background-color: #ffe8e4; /* Light tomato tint */
+    box-shadow: 0px 5px 15px rgba(255, 99, 71, 0.3); /* Adds a soft glow */
+    transition: 0.3s; /* Smooth animation */
+}
+
+/* 2. Click Effect: Button shrinks slightly to simulate a "press" */
+.header-contents button:active {
+    transform: scale(0.95); /* Shrinks to 95% */
+    background-color: #e0e0e0; /* Darker grey to show it's clicked */
+    box-shadow: none; /* Removes shadow to look flat */
+    transition: 0.1s; /* Fast snap effect */
+}
