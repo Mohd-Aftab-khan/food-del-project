@@ -2,16 +2,27 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
+import nodemailer from "nodemailer"; 
 
 // Token Generator
 const createToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET);
 }
 
-// Global Variable to store OTPs
 let otpStore = {}; 
 
-// --- 1. SEND OTP (ALWAYS 123456) ---
+// 👇 BREVO SMTP CONFIGURATION (Free & Unblocked)
+const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com", // Brevo Server
+    port: 587,                    // Standard Port
+    secure: false,                // False for 587
+    auth: {
+        user: process.env.EMAIL_USER, // Your Brevo Email
+        pass: process.env.EMAIL_PASS  // Your Brevo API Key
+    }
+});
+
+// --- 1. SEND OTP (VIA BREVO) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -20,19 +31,30 @@ const sendEmailOtp = async (req, res) => {
             return res.json({ success: false, message: "Email already registered" });
         }
 
-        // 🟢 HARDCODED OTP
-        otpStore[email] = 123456; 
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        otpStore[email] = otp; 
 
-        // Fake Success
-        res.json({ success: true, message: "OTP Sent (Use 123456)" });
+        const mailOptions = {
+            from: process.env.EMAIL_USER, // ⚠️ Must match your Brevo login email
+            to: email,
+            subject: "Verify Account - Food Del",
+            text: `Your verification code is: ${otp}`
+        };
 
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+        console.log("Sending email via Brevo...");
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log("❌ Email Error:", error);
+                return res.json({ success: false, message: "Email failed" });
+            }
+            console.log("✅ Email Sent:", info.response);
+            res.json({ success: true, message: "OTP Sent" });
+        });
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// --- 2. SEND RESET OTP (ALWAYS 123456) ---
+// --- 2. SEND RESET OTP (VIA BREVO) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -41,24 +63,34 @@ const sendResetOtp = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        // 🟢 HARDCODED OTP
-        otpStore[email] = 123456; 
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        otpStore[email] = otp; 
 
-        // Fake Success
-        res.json({ success: true, message: "OTP Sent (Use 123456)" });
+        const mailOptions = {
+            from: process.env.EMAIL_USER, // ⚠️ Must match your Brevo login email
+            to: email,
+            subject: "Reset Password - Food Del",
+            text: `Your password reset code is: ${otp}`
+        };
 
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+        console.log("Sending email via Brevo...");
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log("❌ Email Error:", error);
+                return res.json({ success: false, message: "Email failed" });
+            }
+            console.log("✅ Email Sent:", info.response);
+            res.json({ success: true, message: "OTP Sent" });
+        });
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
 // --- 3. RESET PASSWORD ---
 const resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
     try {
-        // Check if OTP is 123456
-        if (Number(otp) !== 123456 && Number(otpStore[email]) !== Number(otp)) {
+        if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
         if (newPassword.length < 8) return res.json({ success: false, message: "Password too short" });
@@ -67,7 +99,8 @@ const resetPassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         await userModel.findOneAndUpdate({ email }, { password: hashedPassword });
-        
+        delete otpStore[email];
+
         res.json({ success: true, message: "Password Updated" });
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
@@ -76,8 +109,7 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
     const { name, password, email, otp } = req.body;
     try {
-        // Check if OTP is 123456
-        if (Number(otp) !== 123456 && Number(otpStore[email]) !== Number(otp)) {
+        if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
         const salt = await bcrypt.genSalt(10);
@@ -85,6 +117,7 @@ const registerUser = async (req, res) => {
 
         const newUser = new userModel({ name, email, password: hashedPassword });
         const user = await newUser.save();
+        delete otpStore[email];
         
         const token = createToken(user._id);
         res.json({ success: true, token });
