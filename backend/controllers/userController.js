@@ -2,17 +2,16 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import nodemailer from "nodemailer"; 
 
 // Token Generator
 const createToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET);
 }
 
-// Global Variable to store OTPs temporarily
+// Global Variable to store OTPs
 let otpStore = {}; 
 
-// --- 1. SEND OTP (BYPASS MODE - NO EMAIL SENDING) ---
+// --- 1. SEND OTP (ALWAYS 123456) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -21,15 +20,11 @@ const sendEmailOtp = async (req, res) => {
             return res.json({ success: false, message: "Email already registered" });
         }
 
-        // Generate OTP
-        const otp = Math.floor(100000 + Math.random() * 900000);
-        otpStore[email] = otp; 
+        // 🟢 HARDCODED OTP
+        otpStore[email] = 123456; 
 
-        // 👇 THIS LOGS THE OTP SO YOU CAN SEE IT IN RENDER LOGS
-        console.log("🔓 BYPASS REGISTER OTP:", otp); 
-
-        // 👇 Returns Success immediately (No Timeout Error possible!)
-        res.json({ success: true, message: "OTP Generated (Check Logs)" });
+        // Fake Success
+        res.json({ success: true, message: "OTP Sent (Use 123456)" });
 
     } catch (error) { 
         console.log(error);
@@ -37,7 +32,7 @@ const sendEmailOtp = async (req, res) => {
     }
 }
 
-// --- 2. SEND RESET OTP (BYPASS MODE - NO EMAIL SENDING) ---
+// --- 2. SEND RESET OTP (ALWAYS 123456) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -46,15 +41,11 @@ const sendResetOtp = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        // Generate OTP
-        const otp = Math.floor(100000 + Math.random() * 900000);
-        otpStore[email] = otp; 
+        // 🟢 HARDCODED OTP
+        otpStore[email] = 123456; 
 
-        // 👇 THIS LOGS THE OTP SO YOU CAN SEE IT IN RENDER LOGS
-        console.log("🔓 BYPASS RESET OTP:", otp); 
-
-        // 👇 Returns Success immediately
-        res.json({ success: true, message: "OTP Generated (Check Logs)" });
+        // Fake Success
+        res.json({ success: true, message: "OTP Sent (Use 123456)" });
 
     } catch (error) { 
         console.log(error);
@@ -66,7 +57,8 @@ const sendResetOtp = async (req, res) => {
 const resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
     try {
-        if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
+        // Check if OTP is 123456
+        if (Number(otp) !== 123456 && Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
         if (newPassword.length < 8) return res.json({ success: false, message: "Password too short" });
@@ -75,8 +67,7 @@ const resetPassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         await userModel.findOneAndUpdate({ email }, { password: hashedPassword });
-        delete otpStore[email];
-
+        
         res.json({ success: true, message: "Password Updated" });
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
@@ -85,7 +76,8 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
     const { name, password, email, otp } = req.body;
     try {
-        if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
+        // Check if OTP is 123456
+        if (Number(otp) !== 123456 && Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
         const salt = await bcrypt.genSalt(10);
@@ -93,7 +85,6 @@ const registerUser = async (req, res) => {
 
         const newUser = new userModel({ name, email, password: hashedPassword });
         const user = await newUser.save();
-        delete otpStore[email];
         
         const token = createToken(user._id);
         res.json({ success: true, token });
