@@ -11,10 +11,11 @@ const createToken = (id) => {
 let otpStore = {}; 
 
 // REPLACE THIS SECTION
+// REPLACE your old transporter with this:
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // Use SSL
+    secure: true, // Use SSL (prevents hanging)
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -62,10 +63,16 @@ const sendResetOtp = async (req, res) => {
             subject: "Reset Password Code",
             text: `Your password reset code is: ${otp}`
         };
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) return res.json({ success: false, message: "Email failed" });
-            res.json({ success: true, message: "OTP Sent" });
-        });
+        console.log("Attempting to send email to:", email); // <--- ADD THIS LINE
+
+transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+        console.log("Email Error:", error); // <--- ADD THIS LINE
+        return res.json({ success: false, message: "Email failed" });
+    } 
+    console.log("Email Sent Successfully!"); // <--- ADD THIS LINE
+    res.json({ success: true, message: "OTP Sent" });
+});
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
