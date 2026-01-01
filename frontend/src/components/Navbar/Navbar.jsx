@@ -149,7 +149,7 @@ const Navbar = ({ setShowLogin }) => {
               <hr />
               {userEmail === "aftab01561@gmail.com" && (
                  <>
-                   <li onClick={()=>window.open("http://localhost:5174", "_blank")}>
+                   <li onClick={()=>window.open("https://food-del-admin-pearl-eight.vercel.app/add", "_blank")}>
                       <img src={assets.profile_icon} alt="" />
                       <p>Admin Panel</p>
                     </li>
