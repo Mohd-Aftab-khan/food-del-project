@@ -12,18 +12,7 @@ const createToken = (id) => {
 // Global Variable to store OTPs temporarily
 let otpStore = {}; 
 
-// Email Configuration (We keep this for later, even if bypassing now)
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-// --- 1. SEND OTP (BYPASS MODE) ---
+// --- 1. SEND OTP (BYPASS MODE - NO EMAIL SENDING) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -36,10 +25,10 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 🔓 LOG OTP TO CONSOLE (Copy from Render Logs)
-        console.log("🔓 DEVELOPER BYPASS - REGISTER OTP:", otp); 
+        // 👇 THIS LOGS THE OTP SO YOU CAN SEE IT IN RENDER LOGS
+        console.log("🔓 BYPASS REGISTER OTP:", otp); 
 
-        // Send Fake Success to Frontend
+        // 👇 Returns Success immediately (No Timeout Error possible!)
         res.json({ success: true, message: "OTP Generated (Check Logs)" });
 
     } catch (error) { 
@@ -48,7 +37,7 @@ const sendEmailOtp = async (req, res) => {
     }
 }
 
-// --- 2. SEND RESET OTP (BYPASS MODE) ---
+// --- 2. SEND RESET OTP (BYPASS MODE - NO EMAIL SENDING) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -61,10 +50,10 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 🔓 LOG OTP TO CONSOLE (Copy from Render Logs)
-        console.log("🔓 DEVELOPER BYPASS - RESET OTP:", otp); 
+        // 👇 THIS LOGS THE OTP SO YOU CAN SEE IT IN RENDER LOGS
+        console.log("🔓 BYPASS RESET OTP:", otp); 
 
-        // Send Fake Success to Frontend
+        // 👇 Returns Success immediately
         res.json({ success: true, message: "OTP Generated (Check Logs)" });
 
     } catch (error) { 
@@ -96,7 +85,6 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
     const { name, password, email, otp } = req.body;
     try {
-        // Verify OTP from the Store
         if (!otpStore[email] || Number(otpStore[email]) !== Number(otp)) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
@@ -142,10 +130,6 @@ const saveAddress = async (req, res) => {
         if (!userData) return res.json({ success: false, message: "User not found" });
 
         let newAddress = req.body.address;
-        if (newAddress.phone.length !== 10 || isNaN(newAddress.phone)) {
-            return res.json({ success: false, message: "Mobile number must be exactly 10 digits" });
-        }
-
         await userModel.findByIdAndUpdate(req.body.userId, { $push: { address: newAddress } });
         res.json({ success: true, message: "Address Saved" });
 
