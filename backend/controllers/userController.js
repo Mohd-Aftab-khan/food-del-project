@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// --- 1. SEND OTP ---
+// --- 1. SEND OTP (BYPASS MODE) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -30,58 +30,44 @@ const sendEmailOtp = async (req, res) => {
         if (exists) {
             return res.json({ success: false, message: "Email already registered" });
         }
+
+        // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        const mailOptions = {
-            from: "Food Del App",
-            to: email,
-            subject: "Verify Account",
-            text: `Your verification code is: ${otp}`
-        };
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) return res.json({ success: false, message: "Email failed" });
-            res.json({ success: true, message: "OTP Sent" });
-        });
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+        // 👇 THIS IS THE BYPASS: Print OTP to Render Logs
+        console.log("🔓 REGISTER OTP FOR", email, ":", otp); 
+
+        // 👇 INSTANT SUCCESS (Skip sending actual email to prevent timeout)
+        res.json({ success: true, message: "OTP Generated (Check Logs)" });
+
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
-// Find your sendResetOtp function and update the inside part:
+/// --- 2. SEND RESET OTP (BYPASS MODE) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
-        console.log("1. Checking user for email:", email); // Log 1
-
         const user = await userModel.findOne({ email });
         if (!user) {
-            console.log("2. User not found"); // Log 2
             return res.json({ success: false, message: "User not found" });
         }
 
-        console.log("3. User found. Preparing email..."); // Log 3
+        // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        const mailOptions = {
-            from: "Food Del App",
-            to: email,
-            subject: "Reset Password Code",
-            text: `Your password reset code is: ${otp}`
-        };
+        // 👇 THIS IS THE BYPASS: Print OTP to Render Logs
+        console.log("🔓 RESET OTP FOR", email, ":", otp); 
 
-        console.log("4. Sending email now via Port 465..."); // Log 4
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("❌ EMAIL FAILED:", error); // Log Error
-                return res.json({ success: false, message: "Email failed" });
-            }
-            console.log("✅ EMAIL SENT SUCCESS!", info.response); // Log Success
-            res.json({ success: true, message: "OTP Sent" });
-        });
+        // 👇 INSTANT SUCCESS (Skip sending actual email to prevent timeout)
+        res.json({ success: true, message: "OTP Generated (Check Logs)" });
 
     } catch (error) { 
-        console.log("❌ CRITICAL ERROR:", error);
+        console.log(error);
         res.json({ success: false, message: "Error" }); 
     }
 }
