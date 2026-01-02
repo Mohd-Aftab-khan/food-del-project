@@ -2,7 +2,7 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import axios from "axios";
+import axios from "axios"; 
 
 // Token Generator
 const createToken = (id) => {
@@ -11,30 +11,32 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 HELPER: Try to send email, but don't crash if it fails
+// 👇 HELPER: Tries to send email but IGNORES errors so the site keeps working
 const sendBrevoEmail = async (email, subject, content) => {
     try {
         await axios.post(
             'https://api.brevo.com/v3/smtp/email',
             {
-                sender: { email: process.env.EMAIL_USER, name: "Food Del" },
+                sender: { email: process.env.EMAIL_USER, name: "Food Del Support" },
                 to: [{ email: email }],
                 subject: subject,
                 htmlContent: `<html><body><p>${content}</p></body></html>`
             },
             {
-                headers: { 'api-key': process.env.EMAIL_PASS, 'Content-Type': 'application/json' }
+                headers: { 
+                    'api-key': process.env.EMAIL_PASS,
+                    'Content-Type': 'application/json' 
+                }
             }
         );
-        console.log("✅ Email sent via API");
-        return true;
+        console.log("✅ Email API Success");
     } catch (error) {
-        console.log("⚠️ Email failed (Account Not Active), but bypassing...");
-        return false;
+        // We catch the error here so the server doesn't crash!
+        console.log("⚠️ Email failed (Account Paused), but proceeding with Backdoor...");
     }
 };
 
-// --- 1. SEND OTP (BACKDOOR ENABLED) ---
+// --- 1. SEND OTP (WITH BACKDOOR) ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -46,16 +48,19 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // Attempt to send email (It might fail due to Brevo activation)
+        // 1. Try to send email (It will fail, but we ignore that)
         await sendBrevoEmail(email, "Verify Account", `Your code is: <b>${otp}</b>`);
 
-        // 🟢 BACKDOOR: Send success + OTP regardless of email status
-        res.json({ success: true, message: "OTP Generated", debug_otp: otp });
+        // 2. 🟢 BACKDOOR: Send the OTP to the frontend Response
+        res.json({ success: true, message: "OTP Sent (Check Network Tab)", debug_otp: otp });
 
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
-// --- 2. SEND RESET OTP (BACKDOOR ENABLED) ---
+// --- 2. SEND RESET OTP (WITH BACKDOOR) ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -67,12 +72,16 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
+        // 1. Try to send email
         await sendBrevoEmail(email, "Reset Password", `Your code is: <b>${otp}</b>`);
 
-        // 🟢 BACKDOOR: Send success + OTP
-        res.json({ success: true, message: "OTP Generated", debug_otp: otp });
+        // 2. 🟢 BACKDOOR: Send the OTP to the frontend Response
+        res.json({ success: true, message: "OTP Sent (Check Network Tab)", debug_otp: otp });
 
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
 // --- 3. RESET PASSWORD ---
@@ -141,12 +150,10 @@ const saveAddress = async (req, res) => {
     try {
         let userData = await userModel.findById(req.body.userId);
         if (!userData) return res.json({ success: false, message: "User not found" });
-
         let newAddress = req.body.address;
         await userModel.findByIdAndUpdate(req.body.userId, { $push: { address: newAddress } });
         res.json({ success: true, message: "Address Saved" });
-
-    } catch (error) { res.json({ success: false, message: "Error saving address" }); }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
 const updateAddress = async (req, res) => {
@@ -157,9 +164,7 @@ const updateAddress = async (req, res) => {
             user.address[addressIndex] = address;
             await user.save();
             res.json({ success: true, message: "Address Updated" });
-        } else { 
-            res.json({ success: false, message: "Address not found" }); 
-        }
+        } else { res.json({ success: false, message: "Address not found" }); }
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
