@@ -2,7 +2,7 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import axios from "axios"; 
+import nodemailer from "nodemailer"; // Back to Nodemailer
 
 // Token Generator
 const createToken = (id) => {
@@ -11,32 +11,16 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 HELPER: Tries to send email but IGNORES errors so the site keeps working
-const sendBrevoEmail = async (email, subject, content) => {
-    try {
-        await axios.post(
-            'https://api.brevo.com/v3/smtp/email',
-            {
-                sender: { email: process.env.EMAIL_USER, name: "Food Del Support" },
-                to: [{ email: email }],
-                subject: subject,
-                htmlContent: `<html><body><p>${content}</p></body></html>`
-            },
-            {
-                headers: { 
-                    'api-key': process.env.EMAIL_PASS,
-                    'Content-Type': 'application/json' 
-                }
-            }
-        );
-        console.log("✅ Email API Success");
-    } catch (error) {
-        // We catch the error here so the server doesn't crash!
-        console.log("⚠️ Email failed (Account Paused), but proceeding with Backdoor...");
+// 👇 GMAIL SETUP (Standard for Student Projects)
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS
     }
-};
+});
 
-// --- 1. SEND OTP (WITH BACKDOOR) ---
+// --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -48,19 +32,27 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 1. Try to send email (It will fail, but we ignore that)
-        await sendBrevoEmail(email, "Verify Account", `Your code is: <b>${otp}</b>`);
+        // Send Real Email via Gmail
+        const mailOptions = {
+            from: process.env.EMAIL_USER, 
+            to: email,
+            subject: "Verify Account - Food Del",
+            text: `Your verification code is: ${otp}`
+        };
 
-        // 2. 🟢 BACKDOOR: Send the OTP to the frontend Response
-        res.json({ success: true, message: "OTP Sent (Check Network Tab)", debug_otp: otp });
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log("Gmail Error:", error);
+                return res.json({ success: false, message: "Failed to send email" });
+            }
+            console.log("Email sent: " + info.response);
+            res.json({ success: true, message: "OTP Sent to Email" });
+        });
 
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
-// --- 2. SEND RESET OTP (WITH BACKDOOR) ---
+// --- 2. SEND RESET OTP ---
 const sendResetOtp = async (req, res) => {
     const { email } = req.body;
     try {
@@ -72,16 +64,22 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // 1. Try to send email
-        await sendBrevoEmail(email, "Reset Password", `Your code is: <b>${otp}</b>`);
+        const mailOptions = {
+            from: process.env.EMAIL_USER, 
+            to: email,
+            subject: "Reset Password - Food Del",
+            text: `Your password reset code is: ${otp}`
+        };
 
-        // 2. 🟢 BACKDOOR: Send the OTP to the frontend Response
-        res.json({ success: true, message: "OTP Sent (Check Network Tab)", debug_otp: otp });
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log("Gmail Error:", error);
+                return res.json({ success: false, message: "Failed to send email" });
+            }
+            res.json({ success: true, message: "OTP Sent to Email" });
+        });
 
-    } catch (error) { 
-        console.log(error);
-        res.json({ success: false, message: "Error" }); 
-    }
+    } catch (error) { res.json({ success: false, message: "Error" }); }
 }
 
 // --- 3. RESET PASSWORD ---
