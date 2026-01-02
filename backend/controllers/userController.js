@@ -2,7 +2,7 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import nodemailer from "nodemailer"; // Back to Nodemailer
+import axios from "axios"; // Ensure axios is installed
 
 // Token Generator
 const createToken = (id) => {
@@ -11,14 +11,34 @@ const createToken = (id) => {
 
 let otpStore = {}; 
 
-// 👇 GMAIL SETUP (Standard for Student Projects)
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS
+// 👇 EMAILJS CONFIGURATION (Uses the variables you added to Render)
+const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID; // Your "service_xyz"
+const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
+
+// 👇 Helper: Send Email via EmailJS API (Bypasses SMTP blocks)
+const sendEmailJS = async (email, otp) => {
+    try {
+        const data = {
+            service_id: EMAILJS_SERVICE_ID,
+            template_id: EMAILJS_TEMPLATE_ID,
+            user_id: EMAILJS_PUBLIC_KEY,
+            accessToken: EMAILJS_PRIVATE_KEY,
+            template_params: {
+                to_email: email,  // Matches {{to_email}} in your template
+                otp: otp          // Matches {{otp}} in your template
+            }
+        };
+
+        await axios.post('https://api.emailjs.com/api/v1.0/email/send', data);
+        console.log("✅ Email sent successfully via EmailJS");
+        return true;
+    } catch (error) {
+        console.log("❌ EmailJS Failed:", error.response ? error.response.data : error.message);
+        return false;
     }
-});
+};
 
 // --- 1. SEND OTP ---
 const sendEmailOtp = async (req, res) => {
@@ -32,24 +52,19 @@ const sendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        // Send Real Email via Gmail
-        const mailOptions = {
-            from: process.env.EMAIL_USER, 
-            to: email,
-            subject: "Verify Account - Food Del",
-            text: `Your verification code is: ${otp}`
-        };
+        // Send via EmailJS
+        const sent = await sendEmailJS(email, otp);
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("Gmail Error:", error);
-                return res.json({ success: false, message: "Failed to send email" });
-            }
-            console.log("Email sent: " + info.response);
+        if (sent) {
             res.json({ success: true, message: "OTP Sent to Email" });
-        });
+        } else {
+            res.json({ success: false, message: "Failed to send email. Check logs." });
+        }
 
-    } catch (error) { res.json({ success: false, message: "Error" }); }
+    } catch (error) { 
+        console.log(error);
+        res.json({ success: false, message: "Error" }); 
+    }
 }
 
 // --- 2. SEND RESET OTP ---
@@ -64,20 +79,13 @@ const sendResetOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
         otpStore[email] = otp; 
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER, 
-            to: email,
-            subject: "Reset Password - Food Del",
-            text: `Your password reset code is: ${otp}`
-        };
+        const sent = await sendEmailJS(email, otp);
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("Gmail Error:", error);
-                return res.json({ success: false, message: "Failed to send email" });
-            }
+        if (sent) {
             res.json({ success: true, message: "OTP Sent to Email" });
-        });
+        } else {
+            res.json({ success: false, message: "Failed to send email" });
+        }
 
     } catch (error) { res.json({ success: false, message: "Error" }); }
 }
